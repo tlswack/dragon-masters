@@ -86,8 +86,9 @@ export default function BattleScreen({ config }: { config: BattleConfig }) {
       const drops = DRAGONS[battle.enemy.speciesId].drops;
       const mult = captured ? 2 : 1;
       store.addMaterials(Object.fromEntries(Object.entries(drops).map(([id, n]) => [id, n * mult])));
+      if (config.campaign) store.completeCampaignBattle(config.campaign.regionId, config.campaign.battleId);
     }
-  }, [battle.phase, captured, config.playerInstanceId, battle.enemy.speciesId]);
+  }, [battle.phase, captured, config, battle.enemy.speciesId]);
 
   const zones = useMemo(() => {
     const used = new Set<ZoneId>();
@@ -153,8 +154,11 @@ export default function BattleScreen({ config }: { config: BattleConfig }) {
           <div className="text-2xl font-extrabold">Tethered!</div>
           <p className="text-violet-200">{DRAGONS[battle.enemy.speciesId].name} joins your roster!</p>
           <p className="text-sm text-violet-300">Loot (doubled!): {lootLine(battle.enemy.speciesId, true)}</p>
-          <button onClick={() => setScreen("home")} className="rounded-2xl bg-violet-600 px-4 py-3 font-bold text-lg">
-            Back home 🏠
+          <button
+            onClick={() => setScreen(config.campaign ? "map" : "home")}
+            className="rounded-2xl bg-violet-600 px-4 py-3 font-bold text-lg"
+          >
+            Continue ➜
           </button>
         </div>
       )}
@@ -248,8 +252,11 @@ export default function BattleScreen({ config }: { config: BattleConfig }) {
           <div className="text-2xl font-extrabold">Victory!</div>
           <p className="text-emerald-200">{DRAGONS[battle.enemy.speciesId].name} is exhausted and retreats.</p>
           <p className="text-sm text-emerald-300">Loot: {lootLine(battle.enemy.speciesId, false)}</p>
-          <button onClick={() => setScreen("home")} className="rounded-2xl bg-emerald-600 px-4 py-3 font-bold text-lg">
-            Back home 🏠
+          <button
+            onClick={() => setScreen(config.campaign ? "map" : "home")}
+            className="rounded-2xl bg-emerald-600 px-4 py-3 font-bold text-lg"
+          >
+            Continue ➜
           </button>
         </div>
       )}

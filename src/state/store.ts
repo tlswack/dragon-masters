@@ -3,7 +3,7 @@ import { persist } from "zustand/middleware";
 import { DRAGONS } from "../data/dragons";
 import { applyAnswer, type DifficultyBias, type MasteryMap } from "../engine/mastery";
 
-export type Screen = "home" | "practice" | "battle" | "parent" | "roster" | "hoard";
+export type Screen = "home" | "practice" | "battle" | "parent" | "roster" | "hoard" | "map";
 
 // A dragon the player owns. Species data stays in src/data/dragons.ts;
 // this is only the per-dragon save info.
@@ -17,6 +17,8 @@ export interface BattleConfig {
   playerInstanceId: string;
   playerSpeciesId: string;
   enemySpeciesId: string;
+  // Set when the battle belongs to the campaign, so victory marks it done.
+  campaign?: { regionId: string; battleId: string };
 }
 
 let nextInstance = 0;
@@ -30,7 +32,7 @@ interface GameState {
   screen: Screen;
   battleConfig: BattleConfig | null;
   setScreen: (screen: Screen) => void;
-  startBattle: (enemySpeciesId: string) => void;
+  startBattle: (enemySpeciesId: string, campaign?: BattleConfig["campaign"]) => void;
 
   // --- Save state (persisted to localStorage) ---
   practiceAether: number;
@@ -42,6 +44,7 @@ interface GameState {
   activeDragonId: string;
   materials: Record<string, number>;
   buildings: string[];
+  campaignProgress: Record<string, string[]>; // regionId -> completed battle ids
   earnPracticeAether: (amount: number) => void;
   recordAnswer: (skillId: string, correct: boolean, elapsedMs: number) => void;
   setDifficultyBias: (bias: DifficultyBias) => void;
@@ -51,6 +54,7 @@ interface GameState {
   addMaterials: (loot: Record<string, number>) => void;
   buildBuilding: (buildingId: string, cost: Record<string, number>) => void;
   moltDragon: (instanceId: string) => void;
+  completeCampaignBattle: (regionId: string, battleId: string) => void;
 }
 
 const starterDragon = makeInstance("cinderling");
@@ -61,11 +65,11 @@ export const useGame = create<GameState>()(
       screen: "home",
       battleConfig: null,
       setScreen: (screen) => set({ screen }),
-      startBattle: (enemySpeciesId) => {
+      startBattle: (enemySpeciesId, campaign) => {
         const s = get();
         const active = s.roster.find((d) => d.id === s.activeDragonId) ?? s.roster[0];
         set({
-          battleConfig: { playerInstanceId: active.id, playerSpeciesId: active.speciesId, enemySpeciesId },
+          battleConfig: { playerInstanceId: active.id, playerSpeciesId: active.speciesId, enemySpeciesId, campaign },
           screen: "battle",
         });
       },
@@ -79,6 +83,7 @@ export const useGame = create<GameState>()(
       activeDragonId: starterDragon.id,
       materials: {},
       buildings: [],
+      campaignProgress: {},
       earnPracticeAether: (amount) => set((s) => ({ practiceAether: s.practiceAether + amount })),
       recordAnswer: (skillId, correct, elapsedMs) =>
         set((s) => ({
@@ -119,6 +124,12 @@ export const useGame = create<GameState>()(
             roster: s.roster.map((d) => (d.id === instanceId ? { ...d, speciesId: species.moltInto! } : d)),
           };
         }),
+      completeCampaignBattle: (regionId, battleId) =>
+        set((s) => {
+          const done = s.campaignProgress[regionId] ?? [];
+          if (done.includes(battleId)) return s;
+          return { campaignProgress: { ...s.campaignProgress, [regionId]: [...done, battleId] } };
+        }),
     }),
     {
       name: "dragon-masters-save",
@@ -133,6 +144,7 @@ export const useGame = create<GameState>()(
         activeDragonId: s.activeDragonId,
         materials: s.materials,
         buildings: s.buildings,
+        campaignProgress: s.campaignProgress,
       }),
     },
   ),

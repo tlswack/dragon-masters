@@ -3,7 +3,6 @@ import { useGame } from "../state/store";
 
 export default function HomeScreen() {
   const setScreen = useGame((s) => s.setScreen);
-  const startBattle = useGame((s) => s.startBattle);
   const roster = useGame((s) => s.roster);
   const activeDragonId = useGame((s) => s.activeDragonId);
   const active = roster.find((d) => d.id === activeDragonId) ?? roster[0];
@@ -20,10 +19,10 @@ export default function HomeScreen() {
       </div>
       <div className="flex flex-col gap-3 w-full">
         <button
-          onClick={() => startBattle("boulderback")}
+          onClick={() => setScreen("map")}
           className="rounded-2xl bg-rose-700 active:bg-rose-600 px-5 py-5 text-xl font-bold shadow-lg"
         >
-          ⚔️ Battle a wild Boulderback
+          🗺️ Adventure!
         </button>
         <button
           onClick={() => setScreen("hoard")}

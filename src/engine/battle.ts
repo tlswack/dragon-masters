@@ -27,8 +27,10 @@ export interface BattleState {
 
 function startZone(speciesId: string): ZoneId {
   const lineage = LINEAGES[DRAGONS[speciesId].lineage];
-  // Celestials start high in the sky; everyone else starts as low as they live.
-  return lineage.id === "celestial" ? "highAir" : lineage.zones.includes("ground") ? "ground" : lineage.zones[0];
+  // Celestials start high in the sky, wyverns on the wing, everyone else as low as they live.
+  if (lineage.id === "celestial") return "highAir";
+  if (lineage.id === "wyvern") return "lowAir";
+  return lineage.zones.includes("ground") ? "ground" : lineage.zones[0];
 }
 
 function makeCombatant(speciesId: string): Combatant {
