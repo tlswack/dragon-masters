@@ -22,10 +22,10 @@ on-device and works offline.
 - Plain HTML/CSS for the battlefield — no game engine, no canvas
 
 ## Commands
-(Fill these in after Phase 0 creates the project. They should be roughly:)
 - Install dependencies: `npm install`
-- Run the dev server: `npm run dev`
-- Build for production: `npm run build`
+- Run the dev server: `npm run dev` (it prints both a Local and a Network URL)
+- Build for production: `npm run build` (this also type-checks all the code)
+- Preview the production build: `npm run preview`
 Whenever you start the dev server, tell me BOTH the local URL and the network
 URL, so I can open it on my phone/iPad on the same wifi.
 
