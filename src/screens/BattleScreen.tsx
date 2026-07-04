@@ -22,6 +22,7 @@ import {
 } from "../engine/battle";
 import { willBroken } from "../engine/capture";
 import { preloadAetherFor } from "../engine/hoard";
+import { sfx } from "../engine/sfx";
 import { MATERIALS } from "../data/materials";
 import { useGame, type BattleConfig } from "../state/store";
 
@@ -81,6 +82,8 @@ export default function BattleScreen({ config }: { config: BattleConfig }) {
   useEffect(() => {
     if ((battle.phase === "won" || captured) && !rewardRecorded.current) {
       rewardRecorded.current = true;
+      if (captured) sfx.capture();
+      else sfx.victory();
       const store = useGame.getState();
       store.recordBattleWon(config.playerInstanceId);
       const drops = DRAGONS[battle.enemy.speciesId].drops;
@@ -149,7 +152,7 @@ export default function BattleScreen({ config }: { config: BattleConfig }) {
       </div>
 
       {captured && (
-        <div className="rounded-2xl bg-violet-900/90 p-6 text-center flex flex-col gap-3">
+        <div className="rounded-2xl bg-violet-900/90 p-6 text-center flex flex-col gap-3 animate-pop">
           <div className="text-5xl">🪢✨</div>
           <div className="text-2xl font-extrabold">Tethered!</div>
           <p className="text-violet-200">{DRAGONS[battle.enemy.speciesId].name} joins your roster!</p>
@@ -206,7 +209,10 @@ export default function BattleScreen({ config }: { config: BattleConfig }) {
               <button
                 key={move.id}
                 disabled={blocked !== null}
-                onClick={() => setBattle((b) => applyMove(b, "player", move.id))}
+                onClick={() => {
+                  sfx.hit();
+                  setBattle((b) => applyMove(b, "player", move.id));
+                }}
                 className="rounded-2xl bg-indigo-700 active:bg-indigo-500 disabled:bg-slate-800 disabled:text-slate-500 px-4 py-3 text-left shadow flex items-center justify-between"
               >
                 <span className="font-bold">
@@ -247,8 +253,8 @@ export default function BattleScreen({ config }: { config: BattleConfig }) {
       )}
 
       {!captured && battle.phase === "won" && (
-        <div className="rounded-2xl bg-emerald-900/80 p-6 text-center flex flex-col gap-3">
-          <div className="text-5xl">🏆</div>
+        <div className="rounded-2xl bg-emerald-900/80 p-6 text-center flex flex-col gap-3 animate-pop">
+          <div className="text-5xl animate-bounce-slow">🏆</div>
           <div className="text-2xl font-extrabold">Victory!</div>
           <p className="text-emerald-200">{DRAGONS[battle.enemy.speciesId].name} is exhausted and retreats.</p>
           <p className="text-sm text-emerald-300">Loot: {lootLine(battle.enemy.speciesId, false)}</p>
@@ -262,7 +268,7 @@ export default function BattleScreen({ config }: { config: BattleConfig }) {
       )}
 
       {!captured && battle.phase === "lost" && (
-        <div className="rounded-2xl bg-slate-800 p-6 text-center flex flex-col gap-3">
+        <div className="rounded-2xl bg-slate-800 p-6 text-center flex flex-col gap-3 animate-pop">
           <div className="text-5xl">🛡️</div>
           <div className="text-2xl font-extrabold">You retreat — safe and sound</div>
           <p className="text-slate-300">Every dragon master retreats sometimes. Ready to try again?</p>

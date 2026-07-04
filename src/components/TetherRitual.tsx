@@ -3,6 +3,7 @@ import { DRAGONS } from "../data/dragons";
 import type { Problem } from "../data/skills";
 import { linksNeeded, RITUAL_MISSES_ALLOWED, RITUAL_SECONDS_PER_PROBLEM } from "../engine/capture";
 import { pickZpdSkill } from "../engine/mastery";
+import { sfx } from "../engine/sfx";
 import { useGame } from "../state/store";
 
 interface TetherRitualProps {
@@ -28,6 +29,8 @@ export default function TetherRitual({ enemySpeciesId, onSuccess, onFail }: Teth
   const species = DRAGONS[enemySpeciesId];
 
   function advance(gotIt: boolean) {
+    if (gotIt) sfx.correct();
+    else sfx.wrong();
     useGame.getState().recordAnswer(problem.skillId, gotIt, Date.now() - startedAt.current);
     if (gotIt) {
       const done = links + 1;
@@ -64,7 +67,7 @@ export default function TetherRitual({ enemySpeciesId, onSuccess, onFail }: Teth
 
   return (
     <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50">
-      <div className="w-full max-w-md rounded-3xl bg-violet-950 border-2 border-violet-500 p-5 flex flex-col gap-4">
+      <div className="w-full max-w-md rounded-3xl bg-violet-950 border-2 border-violet-500 p-5 flex flex-col gap-4 animate-pop">
         <div className="text-center">
           <div className="text-lg font-extrabold text-violet-200">🪢 Tethering {species.name}</div>
           <div className="text-sm text-violet-400">Answer to tighten each link — quick, before it breaks free!</div>

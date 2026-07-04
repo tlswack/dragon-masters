@@ -1,4 +1,7 @@
+import { useState } from "react";
 import { SKILLS } from "../data/skills";
+import { REGIONS } from "../data/regions";
+import { regionCleared } from "../engine/campaign";
 import { isUnlocked, masteryOf, MASTERED_AT, MASTERING_AT, type DifficultyBias } from "../engine/mastery";
 import { useGame } from "../state/store";
 
@@ -11,7 +14,11 @@ const BIASES: { id: DifficultyBias; label: string; blurb: string }[] = [
 // The parent/teacher dashboard (DESIGN.md ch. 9): the mastery model already
 // produces all this data — this screen just shows it.
 export default function ParentScreen() {
-  const { mastery, difficultyBias, setDifficultyBias, totalSolved, totalCorrect, setScreen } = useGame();
+  const { mastery, difficultyBias, setDifficultyBias, totalSolved, totalCorrect, totalMathMs, roster, buildings, campaignProgress, setScreen, resetSave } = useGame();
+  const [confirmReset, setConfirmReset] = useState(false);
+  const mathMinutes = Math.round(totalMathMs / 60000);
+  const battlesWon = roster.reduce((sum, d) => sum + d.battlesWon, 0);
+  const regionsCleared = REGIONS.filter((r) => regionCleared(campaignProgress, r)).length;
 
   return (
     <div className="min-h-dvh bg-slate-100 text-slate-900 flex flex-col p-4 max-w-md mx-auto">
@@ -23,10 +30,17 @@ export default function ParentScreen() {
       </header>
 
       <section className="rounded-2xl bg-white p-4 shadow mb-4">
-        <h2 className="font-bold mb-1">Answers so far</h2>
+        <h2 className="font-bold mb-1">At a glance</h2>
         <p className="text-3xl font-extrabold">
           {totalCorrect} <span className="text-base font-semibold text-slate-500">correct of {totalSolved}</span>
         </p>
+        <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-sm text-slate-600">
+          <span>🧠 ~{mathMinutes} min of focused math</span>
+          <span>🏆 {battlesWon} battles won</span>
+          <span>🐲 {roster.length} dragons</span>
+          <span>🏰 {buildings.length} buildings</span>
+          <span>🗺️ {regionsCleared} of {REGIONS.length} regions cleared</span>
+        </div>
       </section>
 
       <section className="rounded-2xl bg-white p-4 shadow mb-4">
@@ -70,6 +84,35 @@ export default function ParentScreen() {
             );
           })}
         </div>
+      </section>
+
+      <section className="rounded-2xl bg-white p-4 shadow mt-4">
+        <h2 className="font-bold mb-2">Start over</h2>
+        {confirmReset ? (
+          <div className="flex flex-col gap-2">
+            <p className="text-sm text-rose-700 font-semibold">
+              This erases ALL progress on this device — dragons, mastery, buildings, everything. Are you sure?
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => resetSave()}
+                className="flex-1 rounded-xl bg-rose-600 text-white px-3 py-3 font-bold"
+              >
+                Yes, erase everything
+              </button>
+              <button
+                onClick={() => setConfirmReset(false)}
+                className="flex-1 rounded-xl bg-slate-200 px-3 py-3 font-bold"
+              >
+                No, keep it
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button onClick={() => setConfirmReset(true)} className="rounded-xl bg-slate-200 px-4 py-3 font-bold text-sm">
+            Reset the save…
+          </button>
+        )}
       </section>
     </div>
   );

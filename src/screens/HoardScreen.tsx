@@ -4,6 +4,7 @@ import { DRAGONS } from "../data/dragons";
 import { MATERIALS } from "../data/materials";
 import type { Problem } from "../data/skills";
 import { canAfford, moltBlocker } from "../engine/hoard";
+import { sfx } from "../engine/sfx";
 import { useGame } from "../state/store";
 
 function CostLine({ cost }: { cost: Record<string, number> }) {
@@ -27,9 +28,11 @@ function BuildDesk({ building, onDone }: { building: Building; onDone: (built: b
     const correct = choice === problem.answer;
     useGame.getState().recordAnswer(problem.skillId, correct, Date.now() - startedAt);
     if (correct) {
+      sfx.build();
       useGame.getState().buildBuilding(building.id, building.cost);
       onDone(true);
     } else {
+      sfx.wrong();
       setWrong(true);
     }
   }
@@ -189,6 +192,7 @@ export default function HoardScreen() {
                 {blocker === null ? (
                   <button
                     onClick={() => {
+                      sfx.capture();
                       moltDragon(d.id);
                       setJustMolted(`${species.name} molted into ${target.name}! ${target.emoji}`);
                     }}

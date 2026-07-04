@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { FOCUS_TIERS, type FocusTier, type FocusTierId } from "../data/focusTiers";
 import type { Problem } from "../data/skills";
 import { generateProblem } from "../engine/problems";
+import { sfx } from "../engine/sfx";
 import { useGame } from "../state/store";
 
 export interface AnswerResult {
@@ -48,6 +49,8 @@ export default function FocusBoard({ onAnswer, onContinue, continueLabel = "Keep
     if (stage.kind !== "solving") return;
     const correct = choice === stage.problem.answer;
     const elapsedMs = Date.now() - startedAt.current;
+    if (correct) sfx.correct();
+    else sfx.wrong();
     // Every answer anywhere in the game feeds the mastery model.
     useGame.getState().recordAnswer(stage.problem.skillId, correct, elapsedMs);
     onAnswer({ correct, tier: stage.tier, skillId: stage.problem.skillId, elapsedMs });
@@ -103,7 +106,7 @@ export default function FocusBoard({ onAnswer, onContinue, continueLabel = "Keep
 
   // Feedback stage — gentle either way (DESIGN.md ch. 2.5).
   return (
-    <div className="flex flex-col gap-4 text-center">
+    <div className="flex flex-col gap-4 text-center animate-pop">
       {stage.correct ? (
         <div className="rounded-2xl bg-emerald-800/70 p-6">
           <div className="text-4xl mb-2">🎉</div>

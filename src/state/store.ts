@@ -38,6 +38,7 @@ interface GameState {
   practiceAether: number;
   totalSolved: number;
   totalCorrect: number;
+  totalMathMs: number; // time spent actually thinking about problems
   mastery: MasteryMap;
   difficultyBias: DifficultyBias;
   roster: DragonInstance[];
@@ -55,6 +56,7 @@ interface GameState {
   buildBuilding: (buildingId: string, cost: Record<string, number>) => void;
   moltDragon: (instanceId: string) => void;
   completeCampaignBattle: (regionId: string, battleId: string) => void;
+  resetSave: () => void;
 }
 
 const starterDragon = makeInstance("cinderling");
@@ -77,6 +79,7 @@ export const useGame = create<GameState>()(
       practiceAether: 0,
       totalSolved: 0,
       totalCorrect: 0,
+      totalMathMs: 0,
       mastery: {},
       difficultyBias: "level",
       roster: [starterDragon],
@@ -89,6 +92,7 @@ export const useGame = create<GameState>()(
         set((s) => ({
           totalSolved: s.totalSolved + 1,
           totalCorrect: s.totalCorrect + (correct ? 1 : 0),
+          totalMathMs: s.totalMathMs + Math.min(elapsedMs, 60_000),
           mastery: applyAnswer(s.mastery, skillId, correct, elapsedMs),
         })),
       setDifficultyBias: (difficultyBias) => set({ difficultyBias }),
@@ -130,6 +134,23 @@ export const useGame = create<GameState>()(
           if (done.includes(battleId)) return s;
           return { campaignProgress: { ...s.campaignProgress, [regionId]: [...done, battleId] } };
         }),
+      resetSave: () => {
+        const fresh = makeInstance("cinderling");
+        set({
+          practiceAether: 0,
+          totalSolved: 0,
+          totalCorrect: 0,
+          totalMathMs: 0,
+          mastery: {},
+          difficultyBias: "level",
+          roster: [fresh],
+          activeDragonId: fresh.id,
+          materials: {},
+          buildings: [],
+          campaignProgress: {},
+          screen: "home",
+        });
+      },
     }),
     {
       name: "dragon-masters-save",
@@ -138,6 +159,7 @@ export const useGame = create<GameState>()(
         practiceAether: s.practiceAether,
         totalSolved: s.totalSolved,
         totalCorrect: s.totalCorrect,
+        totalMathMs: s.totalMathMs,
         mastery: s.mastery,
         difficultyBias: s.difficultyBias,
         roster: s.roster,

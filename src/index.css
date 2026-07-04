@@ -8,3 +8,34 @@ button {
   touch-action: manipulation;
   user-select: none;
 }
+
+/* Little bits of juice — kept subtle and fast so the game feels snappy. */
+@keyframes pop {
+  0% {
+    transform: scale(0.85);
+    opacity: 0;
+  }
+  70% {
+    transform: scale(1.04);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+.animate-pop {
+  animation: pop 220ms ease-out both;
+}
+
+@keyframes bounce-slow {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+.animate-bounce-slow {
+  animation: bounce-slow 2.2s ease-in-out infinite;
+}
