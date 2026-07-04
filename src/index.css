@@ -1,0 +1,10 @@
+@import "tailwindcss";
+
+/* Kid-friendly defaults: no accidental text selection or double-tap zoom on buttons */
+html {
+  -webkit-tap-highlight-color: transparent;
+}
+button {
+  touch-action: manipulation;
+  user-select: none;
+}
