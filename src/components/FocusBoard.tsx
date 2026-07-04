@@ -12,6 +12,10 @@ export interface AnswerResult {
 
 interface FocusBoardProps {
   onAnswer: (result: AnswerResult) => void;
+  // Battles need to react after the child has SEEN the feedback (e.g. run the
+  // enemy turn) — so the "continue" tap is surfaced to the parent.
+  onContinue?: (lastCorrect: boolean) => void;
+  continueLabel?: string;
   // Battles can swap in the adaptive selector later; practice mode uses the default.
   problemFor?: (tier: FocusTierId) => Problem;
 }
@@ -24,7 +28,7 @@ const TIER_STYLES: Record<FocusTierId, string> = {
   heavy: "bg-rose-600 active:bg-rose-500",
 };
 
-export default function FocusBoard({ onAnswer, problemFor = generateProblem }: FocusBoardProps) {
+export default function FocusBoard({ onAnswer, onContinue, continueLabel = "Keep going ➜", problemFor = generateProblem }: FocusBoardProps) {
   const [stage, setStage] = useState<Stage>({ kind: "choosing" });
   const startedAt = useRef(0);
 
@@ -104,10 +108,14 @@ export default function FocusBoard({ onAnswer, problemFor = generateProblem }: F
         </div>
       )}
       <button
-        onClick={() => setStage({ kind: "choosing" })}
+        onClick={() => {
+          const wasCorrect = stage.correct;
+          setStage({ kind: "choosing" });
+          onContinue?.(wasCorrect);
+        }}
         className="rounded-2xl bg-indigo-600 active:bg-indigo-500 px-5 py-4 text-xl font-bold shadow-lg"
       >
-        Keep going ➜
+        {continueLabel}
       </button>
     </div>
   );
