@@ -19,6 +19,8 @@ export interface DragonSpecies {
   moltCatalysts?: Record<string, number>; // materialId -> amount
   moltBuilding?: string; // building id required in the Hoard
   moltBattlesNeeded?: number; // combat threshold before a molt can start
+  // Materials this species leaves behind when defeated (doubled on capture).
+  drops: Record<string, number>;
   description: string;
 }
 
@@ -36,6 +38,7 @@ export const DRAGONS: Record<string, DragonSpecies> = {
     moltCatalysts: { emberwood: 6, brimstone: 4 },
     moltBuilding: "ember_forge",
     moltBattlesNeeded: 3,
+    drops: { emberwood: 2, brimstone: 2 },
     description: "A spark-hearted Inferno Wyvern hatchling. Quick and eager.",
   },
   boulderback: {
@@ -48,6 +51,7 @@ export const DRAGONS: Record<string, DragonSpecies> = {
     baseStats: { hp: 34 },
     moves: ["rock_slam", "stone_spray"],
     moltBattlesNeeded: 3,
+    drops: { adamantine: 3, emberwood: 2, brimstone: 2 },
     description: "A stony Terra Drake. Slow, tough, and stubborn.",
   },
   zephyrix: {
@@ -59,6 +63,7 @@ export const DRAGONS: Record<string, DragonSpecies> = {
     stage: "fledgling",
     baseStats: { hp: 34 },
     moves: ["gale_slash", "storm_surge", "fogbank"],
+    drops: { skyglass: 4, aqua_glass: 2 },
     description: "A storm-born Tempest Celestial that dances between the clouds.",
   },
   pyrewing: {
@@ -70,6 +75,7 @@ export const DRAGONS: Record<string, DragonSpecies> = {
     stage: "fledgling",
     baseStats: { hp: 44 },
     moves: ["pyre_talons", "cinder_breath", "inferno_wave"],
+    drops: { emberwood: 3, brimstone: 3 },
     description: "Cinderling grown into a blazing Fledgling — wings of live flame.",
   },
 };

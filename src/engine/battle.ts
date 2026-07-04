@@ -36,13 +36,17 @@ function makeCombatant(speciesId: string): Combatant {
   return { speciesId, hp: species.baseStats.hp, maxHp: species.baseStats.hp, zone: startZone(speciesId), aether: 0, fogged: false };
 }
 
-export function createBattle(playerSpeciesId: string, enemySpeciesId: string): BattleState {
+export function createBattle(playerSpeciesId: string, enemySpeciesId: string, playerStartAether = 0): BattleState {
+  const player = makeCombatant(playerSpeciesId);
+  player.aether = Math.min(AETHER_CAP, playerStartAether);
+  const log = [`A wild ${DRAGONS[enemySpeciesId].name} appears!`];
+  if (playerStartAether > 0) log.push(`Your Hoard sends ${player.aether} ✨ Aether with you!`);
   return {
-    player: makeCombatant(playerSpeciesId),
+    player,
     enemy: makeCombatant(enemySpeciesId),
     turn: 1,
     phase: "focus",
-    log: [`A wild ${DRAGONS[enemySpeciesId].name} appears!`],
+    log,
   };
 }
 

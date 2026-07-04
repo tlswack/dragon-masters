@@ -21,7 +21,15 @@ import {
   type Combatant,
 } from "../engine/battle";
 import { willBroken } from "../engine/capture";
+import { preloadAetherFor } from "../engine/hoard";
+import { MATERIALS } from "../data/materials";
 import { useGame, type BattleConfig } from "../state/store";
+
+function lootLine(speciesId: string, doubled: boolean): string {
+  const drops = DRAGONS[speciesId].drops;
+  const parts = Object.entries(drops).map(([id, n]) => `${MATERIALS[id].emoji} ${n * (doubled ? 2 : 1)} ${MATERIALS[id].name}`);
+  return parts.join(" · ");
+}
 
 function HpBar({ c }: { c: Combatant }) {
   const pct = Math.round((c.hp / c.maxHp) * 100);
@@ -59,20 +67,27 @@ function DragonCard({ c, side, tetherReady }: { c: Combatant; side: "player" | "
 
 export default function BattleScreen({ config }: { config: BattleConfig }) {
   const setScreen = useGame((s) => s.setScreen);
-  const [battle, setBattle] = useState<BattleState>(() => createBattle(config.playerSpeciesId, config.enemySpeciesId));
+  const [battle, setBattle] = useState<BattleState>(() =>
+    createBattle(config.playerSpeciesId, config.enemySpeciesId, preloadAetherFor(config.playerSpeciesId, useGame.getState().buildings)),
+  );
   // What the focus answer should do once the child taps "continue" on feedback.
   const [pendingFocus, setPendingFocus] = useState<{ correct: boolean; aether: number } | null>(null);
   const [ritualOpen, setRitualOpen] = useState(false);
   const [captured, setCaptured] = useState(false);
   const rewardRecorded = useRef(false);
 
-  // Winning (by exhaustion or capture) counts toward the dragon's molt progress.
+  // Winning (by exhaustion or capture) counts toward the dragon's molt
+  // progress and drops materials for the Hoard (doubled on capture).
   useEffect(() => {
     if ((battle.phase === "won" || captured) && !rewardRecorded.current) {
       rewardRecorded.current = true;
-      useGame.getState().recordBattleWon(config.playerInstanceId);
+      const store = useGame.getState();
+      store.recordBattleWon(config.playerInstanceId);
+      const drops = DRAGONS[battle.enemy.speciesId].drops;
+      const mult = captured ? 2 : 1;
+      store.addMaterials(Object.fromEntries(Object.entries(drops).map(([id, n]) => [id, n * mult])));
     }
-  }, [battle.phase, captured, config.playerInstanceId]);
+  }, [battle.phase, captured, config.playerInstanceId, battle.enemy.speciesId]);
 
   const zones = useMemo(() => {
     const used = new Set<ZoneId>();
@@ -137,6 +152,7 @@ export default function BattleScreen({ config }: { config: BattleConfig }) {
           <div className="text-5xl">🪢✨</div>
           <div className="text-2xl font-extrabold">Tethered!</div>
           <p className="text-violet-200">{DRAGONS[battle.enemy.speciesId].name} joins your roster!</p>
+          <p className="text-sm text-violet-300">Loot (doubled!): {lootLine(battle.enemy.speciesId, true)}</p>
           <button onClick={() => setScreen("home")} className="rounded-2xl bg-violet-600 px-4 py-3 font-bold text-lg">
             Back home 🏠
           </button>
@@ -231,6 +247,7 @@ export default function BattleScreen({ config }: { config: BattleConfig }) {
           <div className="text-5xl">🏆</div>
           <div className="text-2xl font-extrabold">Victory!</div>
           <p className="text-emerald-200">{DRAGONS[battle.enemy.speciesId].name} is exhausted and retreats.</p>
+          <p className="text-sm text-emerald-300">Loot: {lootLine(battle.enemy.speciesId, false)}</p>
           <button onClick={() => setScreen("home")} className="rounded-2xl bg-emerald-600 px-4 py-3 font-bold text-lg">
             Back home 🏠
           </button>

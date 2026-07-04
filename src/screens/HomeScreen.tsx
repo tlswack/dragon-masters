@@ -26,6 +26,12 @@ export default function HomeScreen() {
           ⚔️ Battle a wild Boulderback
         </button>
         <button
+          onClick={() => setScreen("hoard")}
+          className="rounded-2xl bg-amber-700 active:bg-amber-600 px-5 py-5 text-xl font-bold shadow-lg"
+        >
+          🏰 The Hoard (build & molt)
+        </button>
+        <button
           onClick={() => setScreen("roster")}
           className="rounded-2xl bg-violet-700 active:bg-violet-600 px-5 py-5 text-xl font-bold shadow-lg"
         >
