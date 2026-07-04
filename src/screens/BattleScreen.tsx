@@ -1,5 +1,6 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import FocusBoard from "../components/FocusBoard";
+import TetherRitual from "../components/TetherRitual";
 import { ASPECTS } from "../data/aspects";
 import { DRAGONS } from "../data/dragons";
 import { LINEAGES, ZONE_ORDER, type ZoneId } from "../data/lineages";
@@ -15,9 +16,11 @@ import {
   moveBlockedReason,
   shiftZone,
   shiftTargets,
+  runEnemyTurn,
   type BattleState,
   type Combatant,
 } from "../engine/battle";
+import { willBroken } from "../engine/capture";
 import { useGame, type BattleConfig } from "../state/store";
 
 function HpBar({ c }: { c: Combatant }) {
@@ -30,7 +33,7 @@ function HpBar({ c }: { c: Combatant }) {
   );
 }
 
-function DragonCard({ c, side }: { c: Combatant; side: "player" | "enemy" }) {
+function DragonCard({ c, side, tetherReady }: { c: Combatant; side: "player" | "enemy"; tetherReady?: boolean }) {
   const species = DRAGONS[c.speciesId];
   const aspect = ASPECTS[species.aspect];
   return (
@@ -40,6 +43,7 @@ function DragonCard({ c, side }: { c: Combatant; side: "player" | "enemy" }) {
         <span className="truncate">{species.name}</span>
         {c.fogged && <span title="Hidden in fog">🌫️</span>}
       </div>
+      {tetherReady && <div className="text-xs font-bold text-violet-300">💫 Will broken!</div>}
       <HpBar c={c} />
       <div className="text-xs mt-1 flex items-center justify-between">
         <span className={`${aspect.badgeClass} rounded-full px-1.5 py-0.5`}>
@@ -58,6 +62,17 @@ export default function BattleScreen({ config }: { config: BattleConfig }) {
   const [battle, setBattle] = useState<BattleState>(() => createBattle(config.playerSpeciesId, config.enemySpeciesId));
   // What the focus answer should do once the child taps "continue" on feedback.
   const [pendingFocus, setPendingFocus] = useState<{ correct: boolean; aether: number } | null>(null);
+  const [ritualOpen, setRitualOpen] = useState(false);
+  const [captured, setCaptured] = useState(false);
+  const rewardRecorded = useRef(false);
+
+  // Winning (by exhaustion or capture) counts toward the dragon's molt progress.
+  useEffect(() => {
+    if ((battle.phase === "won" || captured) && !rewardRecorded.current) {
+      rewardRecorded.current = true;
+      useGame.getState().recordBattleWon(config.playerInstanceId);
+    }
+  }, [battle.phase, captured, config.playerInstanceId]);
 
   const zones = useMemo(() => {
     const used = new Set<ZoneId>();
@@ -76,6 +91,7 @@ export default function BattleScreen({ config }: { config: BattleConfig }) {
 
   const playerMoves = DRAGONS[battle.player.speciesId].moves.map((id) => MOVES[id]);
   const forceTarget = canForceDown(battle.enemy);
+  const tetherReady = battle.phase === "act" && willBroken(battle) && !captured;
 
   return (
     <div className="min-h-dvh bg-slate-950 text-white flex flex-col p-3 max-w-md mx-auto">
@@ -100,7 +116,11 @@ export default function BattleScreen({ config }: { config: BattleConfig }) {
               <br />
               {zone.name}
             </div>
-            {battle.enemy.zone === zone.id ? <DragonCard c={battle.enemy} side="enemy" /> : <div className="w-36" />}
+            {battle.enemy.zone === zone.id ? (
+              <DragonCard c={battle.enemy} side="enemy" tetherReady={willBroken(battle) && battle.enemy.hp > 0} />
+            ) : (
+              <div className="w-36" />
+            )}
           </div>
         ))}
       </div>
@@ -112,7 +132,34 @@ export default function BattleScreen({ config }: { config: BattleConfig }) {
         ))}
       </div>
 
-      {battle.phase === "focus" && (
+      {captured && (
+        <div className="rounded-2xl bg-violet-900/90 p-6 text-center flex flex-col gap-3">
+          <div className="text-5xl">🪢✨</div>
+          <div className="text-2xl font-extrabold">Tethered!</div>
+          <p className="text-violet-200">{DRAGONS[battle.enemy.speciesId].name} joins your roster!</p>
+          <button onClick={() => setScreen("home")} className="rounded-2xl bg-violet-600 px-4 py-3 font-bold text-lg">
+            Back home 🏠
+          </button>
+        </div>
+      )}
+
+      {ritualOpen && (
+        <TetherRitual
+          enemySpeciesId={battle.enemy.speciesId}
+          onSuccess={() => {
+            setRitualOpen(false);
+            useGame.getState().addToRoster(battle.enemy.speciesId);
+            setCaptured(true);
+          }}
+          onFail={() => {
+            // It breaks free — and gets its turn while you recover.
+            setRitualOpen(false);
+            setBattle((b) => runEnemyTurn(b));
+          }}
+        />
+      )}
+
+      {!captured && battle.phase === "focus" && (
         <FocusBoard
           onAnswer={({ correct, tier }) => {
             setPendingFocus({ correct, aether: tier.aether });
@@ -122,9 +169,17 @@ export default function BattleScreen({ config }: { config: BattleConfig }) {
         />
       )}
 
-      {battle.phase === "act" && (
+      {!captured && battle.phase === "act" && (
         <div className="flex flex-col gap-2">
           <p className="text-center text-slate-300 font-semibold text-sm">Spend your Aether, then end your turn</p>
+          {tetherReady && (
+            <button
+              onClick={() => setRitualOpen(true)}
+              className="rounded-2xl bg-violet-700 active:bg-violet-500 px-4 py-4 font-extrabold text-lg shadow-lg animate-pulse"
+            >
+              🪢 Begin the Tethering Ritual!
+            </button>
+          )}
           {playerMoves.map((move) => {
             const blocked = moveBlockedReason(battle, "player", move);
             return (
@@ -171,7 +226,7 @@ export default function BattleScreen({ config }: { config: BattleConfig }) {
         </div>
       )}
 
-      {battle.phase === "won" && (
+      {!captured && battle.phase === "won" && (
         <div className="rounded-2xl bg-emerald-900/80 p-6 text-center flex flex-col gap-3">
           <div className="text-5xl">🏆</div>
           <div className="text-2xl font-extrabold">Victory!</div>
@@ -182,7 +237,7 @@ export default function BattleScreen({ config }: { config: BattleConfig }) {
         </div>
       )}
 
-      {battle.phase === "lost" && (
+      {!captured && battle.phase === "lost" && (
         <div className="rounded-2xl bg-slate-800 p-6 text-center flex flex-col gap-3">
           <div className="text-5xl">🛡️</div>
           <div className="text-2xl font-extrabold">You retreat — safe and sound</div>

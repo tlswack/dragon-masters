@@ -2,6 +2,7 @@ import BattleScreen from "./screens/BattleScreen";
 import HomeScreen from "./screens/HomeScreen";
 import ParentScreen from "./screens/ParentScreen";
 import PracticeScreen from "./screens/PracticeScreen";
+import RosterScreen from "./screens/RosterScreen";
 import { useGame } from "./state/store";
 
 export default function App() {
@@ -10,9 +11,10 @@ export default function App() {
 
   if (screen === "practice") return <PracticeScreen />;
   if (screen === "parent") return <ParentScreen />;
+  if (screen === "roster") return <RosterScreen />;
   if (screen === "battle" && battleConfig) {
     // key remounts the battle when a new one starts
-    return <BattleScreen key={`${battleConfig.playerSpeciesId}-${battleConfig.enemySpeciesId}`} config={battleConfig} />;
+    return <BattleScreen key={`${battleConfig.playerInstanceId}-${battleConfig.enemySpeciesId}`} config={battleConfig} />;
   }
   return <HomeScreen />;
 }
