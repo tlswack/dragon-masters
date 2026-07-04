@@ -55,7 +55,6 @@ function DragonCard({ c, side }: { c: Combatant; side: "player" | "enemy" }) {
 
 export default function BattleScreen({ config }: { config: BattleConfig }) {
   const setScreen = useGame((s) => s.setScreen);
-  const recordAnswer = useGame((s) => s.recordAnswer);
   const [battle, setBattle] = useState<BattleState>(() => createBattle(config.playerSpeciesId, config.enemySpeciesId));
   // What the focus answer should do once the child taps "continue" on feedback.
   const [pendingFocus, setPendingFocus] = useState<{ correct: boolean; aether: number } | null>(null);
@@ -116,7 +115,6 @@ export default function BattleScreen({ config }: { config: BattleConfig }) {
       {battle.phase === "focus" && (
         <FocusBoard
           onAnswer={({ correct, tier }) => {
-            recordAnswer(correct);
             setPendingFocus({ correct, aether: tier.aether });
           }}
           onContinue={continueAfterFocus}

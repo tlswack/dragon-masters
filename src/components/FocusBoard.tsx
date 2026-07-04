@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { FOCUS_TIERS, type FocusTier, type FocusTierId } from "../data/focusTiers";
 import type { Problem } from "../data/skills";
 import { generateProblem } from "../engine/problems";
+import { useGame } from "../state/store";
 
 export interface AnswerResult {
   correct: boolean;
@@ -28,7 +29,13 @@ const TIER_STYLES: Record<FocusTierId, string> = {
   heavy: "bg-rose-600 active:bg-rose-500",
 };
 
-export default function FocusBoard({ onAnswer, onContinue, continueLabel = "Keep going ➜", problemFor = generateProblem }: FocusBoardProps) {
+// Default selection is adaptive: it reads the child's live mastery map.
+function adaptiveProblem(tier: FocusTierId): Problem {
+  const { mastery, difficultyBias } = useGame.getState();
+  return generateProblem(tier, mastery, difficultyBias);
+}
+
+export default function FocusBoard({ onAnswer, onContinue, continueLabel = "Keep going ➜", problemFor = adaptiveProblem }: FocusBoardProps) {
   const [stage, setStage] = useState<Stage>({ kind: "choosing" });
   const startedAt = useRef(0);
 
@@ -40,7 +47,10 @@ export default function FocusBoard({ onAnswer, onContinue, continueLabel = "Keep
   function answer(choice: string) {
     if (stage.kind !== "solving") return;
     const correct = choice === stage.problem.answer;
-    onAnswer({ correct, tier: stage.tier, skillId: stage.problem.skillId, elapsedMs: Date.now() - startedAt.current });
+    const elapsedMs = Date.now() - startedAt.current;
+    // Every answer anywhere in the game feeds the mastery model.
+    useGame.getState().recordAnswer(stage.problem.skillId, correct, elapsedMs);
+    onAnswer({ correct, tier: stage.tier, skillId: stage.problem.skillId, elapsedMs });
     setStage({ kind: "feedback", tier: stage.tier, problem: stage.problem, correct });
   }
 

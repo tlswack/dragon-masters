@@ -1,7 +1,8 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { applyAnswer, type DifficultyBias, type MasteryMap } from "../engine/mastery";
 
-export type Screen = "home" | "practice" | "battle";
+export type Screen = "home" | "practice" | "battle" | "parent";
 
 export interface BattleConfig {
   playerSpeciesId: string;
@@ -19,8 +20,11 @@ interface GameState {
   practiceAether: number;
   totalSolved: number;
   totalCorrect: number;
+  mastery: MasteryMap;
+  difficultyBias: DifficultyBias;
   earnPracticeAether: (amount: number) => void;
-  recordAnswer: (correct: boolean) => void;
+  recordAnswer: (skillId: string, correct: boolean, elapsedMs: number) => void;
+  setDifficultyBias: (bias: DifficultyBias) => void;
 }
 
 export const useGame = create<GameState>()(
@@ -34,12 +38,16 @@ export const useGame = create<GameState>()(
       practiceAether: 0,
       totalSolved: 0,
       totalCorrect: 0,
+      mastery: {},
+      difficultyBias: "level",
       earnPracticeAether: (amount) => set((s) => ({ practiceAether: s.practiceAether + amount })),
-      recordAnswer: (correct) =>
+      recordAnswer: (skillId, correct, elapsedMs) =>
         set((s) => ({
           totalSolved: s.totalSolved + 1,
           totalCorrect: s.totalCorrect + (correct ? 1 : 0),
+          mastery: applyAnswer(s.mastery, skillId, correct, elapsedMs),
         })),
+      setDifficultyBias: (difficultyBias) => set({ difficultyBias }),
     }),
     {
       name: "dragon-masters-save",
@@ -48,6 +56,8 @@ export const useGame = create<GameState>()(
         practiceAether: s.practiceAether,
         totalSolved: s.totalSolved,
         totalCorrect: s.totalCorrect,
+        mastery: s.mastery,
+        difficultyBias: s.difficultyBias,
       }),
     },
   ),

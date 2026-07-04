@@ -22,6 +22,9 @@ export default function HomeScreen() {
           🧠 Focus Board practice
         </button>
       </div>
+      <button onClick={() => setScreen("parent")} className="text-indigo-400 underline text-sm mt-4">
+        For grown-ups
+      </button>
     </div>
   );
 }

@@ -3,7 +3,7 @@ import { useGame } from "../state/store";
 
 // Phase 1 standalone screen: solve problems, watch the Aether counter climb.
 export default function PracticeScreen() {
-  const { practiceAether, totalSolved, totalCorrect, earnPracticeAether, recordAnswer } = useGame();
+  const { practiceAether, totalSolved, totalCorrect, earnPracticeAether } = useGame();
 
   return (
     <div className="min-h-dvh bg-indigo-950 text-white flex flex-col p-4 max-w-md mx-auto">
@@ -19,7 +19,6 @@ export default function PracticeScreen() {
       </p>
       <FocusBoard
         onAnswer={({ correct, tier }) => {
-          recordAnswer(correct);
           if (correct) earnPracticeAether(tier.aether);
         }}
       />
